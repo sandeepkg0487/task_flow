@@ -1,14 +1,8 @@
 const express = require("express");
 const router = express.Router();
+const authRoutes = require("../auth/authRoutes");
 
-router.get("/info", (req, res) => {
-    res.json({
-        project_name: "My Project",
-        version: "1.0.0",
-        description: "Project information",
-        status: "active"
-    });
-});
+router.use("/auth", authRoutes);
 
 router.get("/info/status", (req, res) => {
     res.json({
