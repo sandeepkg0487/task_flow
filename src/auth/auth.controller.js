@@ -89,6 +89,7 @@ const register = async (req, res) => {
 
     return res.status(500).json({
       message: "Unable to register user",
+      error:error,
     });
   }
 };

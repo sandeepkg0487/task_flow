@@ -9,5 +9,13 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD,
   port: Number(process.env.DB_PORT),
 });
+pool.connect()
+  .then((client) => {
+    console.log("Database connected:", process.env.DB_NAME);
+    client.release();
+  })
+  .catch((err) => {
+    console.error("Database connection failed:", err.message);
+  });
 
 module.exports = pool;
