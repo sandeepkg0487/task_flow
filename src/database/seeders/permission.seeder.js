@@ -1,77 +1,76 @@
-const permissions = [
-  // TASKS MODULE
-  {
-    module_name: "Tasks",
-    name: "Create Task",
-    action: "create",
-    description: "Create new tasks",
-  },
-  {
-    module_name: "Tasks",
-    name: "View Task",
-    action: "view",
-    description: "View tasks",
-  },
-  {
-    module_name: "Tasks",
-    name: "Update Task",
-    action: "update",
-    description: "Update tasks",
-  },
-  {
-    module_name: "Tasks",
-    name: "Delete Task",
-    action: "delete",
-    description: "Delete tasks",
-  },
 
-  // USERS MODULE
+const modules = [
   {
-    module_name: "Users",
-    name: "Create User",
-    action: "create",
-    description: "Create new users",
+    name: "Users",
+    slug: "users",
+    description: "User management",
+    permissions: ["create", "read", "update", "delete"],
   },
   {
-    module_name: "Users",
-    name: "View User",
-    action: "view",
-    description: "View users",
+    name: "Tasks",
+    slug: "tasks",
+    description: "Task management",
+    permissions: ["create", "read", "update", "delete"],
   },
   {
-    module_name: "Users",
-    name: "Update User",
-    action: "update",
-    description: "Update users",
+    name: "Projects",
+    slug: "projects",
+    description: "Project management",
+    permissions: ["create", "read", "update", "delete"],
   },
   {
-    module_name: "Users",
-    name: "Delete User",
-    action: "delete",
-    description: "Delete users",
+    name: "Roles",
+    slug: "roles",
+    description: "Role management",
+    permissions: ["create", "read", "update", "delete"],
+  },
+  {
+    name: "Reports",
+    slug: "reports",
+    description: "Report management",
+    permissions: ["view", "export"],
   },
 ];
 
 const seedPermissions = async (client) => {
-  for (const permission of permissions) {
-    await client.query(
-      `INSERT INTO permissions
-        (module_name, name, action, description)
-       VALUES ($1, $2, $3, $4)
-       ON CONFLICT (module_name, action)
+  for (const module of modules) {
+    // 1. Insert module
+    const moduleResult = await client.query(
+      `INSERT INTO modules (name, slug, description)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (slug)
        DO UPDATE SET
          name = EXCLUDED.name,
-         description = EXCLUDED.description`,
-      [
-        permission.module_name,
-        permission.name,
-        permission.action,
-        permission.description,
-      ]
+         description = EXCLUDED.description
+       RETURNING id`,
+      [module.name, module.slug, module.description]
     );
+
+    const moduleId = moduleResult.rows[0].id;
+
+    // 2. Insert permissions
+    for (const action of module.permissions) {
+      const permissionName = `${module.slug}:${action}`;
+
+      await client.query(
+        `INSERT INTO permissions
+         (module_id, name, action, description)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (module_id, action)
+         DO UPDATE SET
+           name = EXCLUDED.name,
+           description = EXCLUDED.description`,
+        [
+          moduleId,
+          permissionName,
+          action,
+          `${action} permission for ${module.name}`,
+        ]
+      );
+    }
   }
 
-  console.log("Permissions seeded");
+  console.log("Default permissions seeded successfully");
 };
 
 module.exports = seedPermissions;
